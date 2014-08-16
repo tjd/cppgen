@@ -94,13 +94,13 @@ class Assign(Node):
     def __repr__(self):
         return 'Assign("%s", %s, %s)' % (self.op, self.lhs_vble, self.rhs_expr) 
 
-class Seq(Node):
+class Block(Node):
     def __init__(self, *kids):
         self.kids = kids
         self.comment = ''
 
     def __repr__(self):
-        return 'Seq(%s)' % (', '.join(str (k) for k in self.kids))
+        return 'Block(%s)' % (', '.join(str (k) for k in self.kids))
 
 class Loop(Node):
     def __init__(self, cond, body):
@@ -149,7 +149,7 @@ def eval_expr(e, env={}):
 #         return [e.vble.name] + get_vars(e.init_expr)
 #     elif isinstance(e, Assign):
 #         return get_vars(e.lhs_vble) + get_vars(e.rhs_expr)
-#     elif isinstance(e, Seq):
+#     elif isinstance(e, Block):
 #         result = []
 #         for s in e.kids:
 #             result.extend(get_vars(s))
@@ -188,7 +188,7 @@ def infix_str(e):
         return '%s %s = %s;' % (e.vble.kind, e.vble.name, infix_str(e.init_expr))
     elif isinstance(e, Assign):
         return '%s %s %s;' % (e.vble.name, e.op, infix_str(e.expr))
-    elif isinstance(e, Seq):
+    elif isinstance(e, Block):
         result = [infix_str(s) for s in e.kids]
         if e.comment != '':
             result.insert(0, '// %s' % e.comment)
@@ -202,7 +202,7 @@ def infix_str(e):
 
 ######################################################################
 
-def test2():
+def test1():
     a = DefineVar(Var('a', 'int'), Literal('2', 'int'))
     print a
     print infix_str(a)
@@ -213,29 +213,30 @@ def test2():
     print get_vars(b)
     i1 = PreInc(Var('a', 'int'))
     d1 = PostDec(Var('b', 'int'))
-    frag = Seq(a, b, i1, d1)
+    frag = Block(a, b, i1, d1)
     frag.comment = 'a fragment of code'
     print frag
     print infix_str(frag)
     # print get_vars(frag)
 
-def test3():
+def test2():
     ivar = Var('i', 'int')
     init = DefineVar(ivar, Literal('1', 'int'))
     cond = BinOp('<', ivar, Literal('5', 'int'))
     incr = PostInc(ivar)
-    body = Seq(Print(BinOp('*', ivar, ivar)), incr)
+    body = Block(Print(BinOp('*', ivar, ivar)), incr)
     loop = Loop(cond, body)
-    prog = Seq(init, loop)
+    prog = Block(init, loop)
     print prog
     print infix_str(prog)
     ivar.name = 'j'
     print prog
     print infix_str(prog)
 
-    test = Seq(DefineVar(Var("i", "int"), Literal("1", "int")), Loop(BinOp("<", Var("i", "int"), Literal("5", "int")), Seq(Print(BinOp("*", Var("i", "int"), Var("i", "int"))), PostInc(Var("i", "int")))))
+    test = Block(DefineVar(Var("i", "int"), Literal("1", "int")), Loop(BinOp("<", Var("i", "int"), Literal("5", "int")), Block(Print(BinOp("*", Var("i", "int"), Var("i", "int"))), PostInc(Var("i", "int")))))
     print test
     print infix_str(test)   
 
 if __name__ == '__main__':
-    test3()
+    # test1()
+    test2()
